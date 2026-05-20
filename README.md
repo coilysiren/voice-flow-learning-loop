@@ -1,6 +1,6 @@
 # voice-flow-learning-loop
 
-Reference index for Kai's dictation meta-improvement loop. Every piece is sourcelinked except Luca, which stays private for the time being.
+Reference index for Kai's dictation meta-improvement loop. Generic-purpose pieces live in this repo as their canonical home; Kai-specific glue (the collaboration rule that loads it into every session, the asker stack that synthesizes downstream) stays in private sibling repos and is described here abstractly.
 
 ## What the loop is
 
@@ -33,55 +33,48 @@ One block per detected mishear. The leading `- voice mangling` phrase is the anc
 
 ### Detection rule: `writing-voice-mangle-log`
 
-Thin skill carrying the format spec and the trigger surface. Lives in agentic-os-kai.
+Thin skill carrying the format spec and the trigger surface. Lives in this repo as the canonical home.
 
-- Skill: [`writing-voice-mangle-log/SKILL.md`](https://github.com/coilysiren/agentic-os-kai/blob/main/.claude/skills/writing-voice-mangle-log/SKILL.md)
-- Tracking issue: [coilysiren/agentic-os-kai#628](https://github.com/coilysiren/agentic-os-kai/issues/628)
+- Skill: [`.claude/skills/writing-voice-mangle-log/SKILL.md`](.claude/skills/writing-voice-mangle-log/SKILL.md)
 
 Strict mode by default: only emit when both the mishear and the intended target are high-confidence. False-positive entries poison the dictionary signal.
 
-### Recovery rule: `kai-collaboration`
+### Recovery rule (private)
 
-The unconditional companion to the detection skill. Tells the model to recover seamlessly in the response body and emit the structured block at the top. Lives in agentic-os-kai.
+The unconditional rule that loads the format into every Claude Code session lives in `kai-collaboration`, a generic-purpose meta-collaboration skill in the private agentic-os-kai sibling repo. The dictation-mangle recovery is one section within it. The skill stays private as a whole because most of its content is unrelated to this loop; only the relevant rule is named here.
 
-- Rule: [`kai-collaboration/SKILL.md` "Recover from severely mangled dictation"](https://github.com/coilysiren/agentic-os-kai/blob/main/.claude/skills/kai-collaboration/SKILL.md)
-- Origin: agentic-os-kai#492 (the original dictionary tracking issue this loop supersedes for the chat-emit path)
+- Pointer: [`docs/recovery-rule-stub.md`](docs/recovery-rule-stub.md)
 
 ### Corpus indexer: repo-recall
 
 Local-only Rust + axum + MCP daemon that scans on-disk repos, sessions, and commits and serves them via JSON and MCP (`recall_search`, `recall_dashboard`, `recall_session`, etc.). The structured log block lands in Claude Code session JSONL files and gets full-text-indexed on the next scan.
 
 - Repo: [coilysiren/repo-recall](https://github.com/coilysiren/repo-recall)
-- MCP surface: `recall_search` is the entry point. The Luca asker stack consumes from here.
+- MCP surface: `recall_search` is the entry point. The asker stack consumes from here.
 
-### Asker: Luca (private)
+### Asker: private
 
-Natural-language consumer over repo-recall data. Routes questions to a dispatch table and returns focused answers. The asker for this loop pulls recent log blocks and surfaces them as candidate dictionary entries. Private repo for the time being; capability described here, source not linked.
-
-A staging instance is wired into mcporter as `luca-staging`. Auto-reached by Kai's session-config for any past-work-recall question.
+Natural-language consumer over repo-recall data. Routes questions to a dispatch table and returns focused answers. The asker for this loop pulls recent log blocks and surfaces them as candidate dictionary entries. Source stays private; capability described here.
 
 ### Sink target: Wispr Flow MCP (does not exist yet)
 
-End state of the loop: the Luca asker calls a Wispr Flow MCP that ingests recent log blocks into the per-user dictionary, so the same mishear doesn't recur. The MCP doesn't exist today - Kai is lobbying Wispr Flow's team for one. Conversation started 2026-05-14, ongoing.
+End state of the loop: the asker calls a Wispr Flow MCP that ingests recent log blocks into the per-user dictionary, so the same mishear doesn't recur. The MCP doesn't exist today; Kai is lobbying Wispr Flow's team for one.
 
-Until the MCP exists, the human-in-the-loop fallback is the legacy [agentic-os-kai#492](https://github.com/coilysiren/agentic-os-kai/issues/492) tracking issue: Kai (or the model on her behalf) appends entries in `heard / intended / one-line context` form. The chat-emit block is the source corpus; #492 is the human-curated output destination.
+Until the MCP exists, the human-in-the-loop fallback is manual curation: Kai (or the model on her behalf) appends entries in a `heard / intended / one-line context` form to a private tracking issue. The chat-emit block is the source corpus; the manual queue is the human-curated output destination.
 
 ### MCP wiring: mcporter + tooling-mcp-servers
 
-The Luca stack reaches into repo-recall via mcporter. Kai's session-config auto-reaches for the staging variants of all three (`repo-recall-staging`, `luca-staging`, `session-lattice-staging`) without being asked.
+The asker reaches into repo-recall via mcporter. Kai's session-config auto-reaches for the staging variants of the asker stack without being asked.
 
-- Skill: [`tooling-mcp-servers/SKILL.md`](https://github.com/coilysiren/agentic-os/blob/main/.claude/skills/tooling-mcp-servers/SKILL.md)
-- Hard-trigger rule + auto-reach scope landed in [coilysiren/agentic-os#109](https://github.com/coilysiren/agentic-os/issues/109).
+- Skill: [`tooling-mcp-servers/SKILL.md`](https://github.com/coilysiren/agentic-os/blob/main/.claude/skills/tooling-mcp-servers/SKILL.md) in coilysiren/agentic-os.
 
 ## Invariant: corpus hygiene
 
 **Mangle instances flow forward, never backward.** They live only in the chat-emitted log block (which flows into the corpus). They do **not** go into any SKILL.md, AGENTS.md, README.md, GitHub issue body, commit message, or other artifact that gets loaded as context or re-indexed.
 
-Reason: SKILL.md descriptions load into every session's context, so listing mangled tokens there teaches the model to expect the mangles as canonical. repo-recall full-text-indexes those files too, so the mangles would appear as false-positive hits when the Luca asker searches for real voice-mangle events.
+Reason: SKILL.md descriptions load into every session's context, so listing mangled tokens there teaches the model to expect the mangles as canonical. repo-recall full-text-indexes those files too, so the mangles would appear as false-positive hits when the asker searches for real voice-mangle events.
 
-This invariant was learned the hard way in-session 2026-05-20:
-- [coilysiren/agentic-os-kai#629](https://github.com/coilysiren/agentic-os-kai/issues/629) - scrub mangle examples from `writing-voice-mangle-log` SKILL.md.
-- [coilysiren/agentic-os#111](https://github.com/coilysiren/agentic-os/issues/111) - strip mangle variants from `tooling-mcp-servers` triggers.
+This invariant was learned the hard way in-session 2026-05-20 across two scrub commits (private agentic-os-kai and public coilysiren/agentic-os).
 
 ## Status
 
