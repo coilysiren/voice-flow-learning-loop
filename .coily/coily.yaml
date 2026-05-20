@@ -1,0 +1,18 @@
+# Per-repo command allowlist for voice-flow-learning-loop. Python stdlib
+# scripts that walk Claude Code session JSONL. Coily is the canonical
+# entry point so the lockdown can deny bare python invocations.
+
+commands:
+  mine:
+    run: python3 scripts/snippet-frequency.py
+    description: Loop 2 layer 2 frequency mining over session JSONL.
+
+# Catalog metadata for the cross-repo knowledge graph.
+# Schema: coilysiren/agentic-os-kai#420.
+catalog:
+  kind: Component
+  type: research
+  system: voice-flow
+  owner: kai
+  lifecycle: experimental
+  description: "Dictation meta-improvement learning loops targeting Wispr Flow."
