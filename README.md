@@ -45,13 +45,30 @@ session JSONL  ->  repo-recall full-text index  ->  asker (repeat-phrase frequen
 
 **Behavioral cost:** Kai has to learn and use the new trigger phrases. This is opt-in per snippet. She doesn't change how she talks generally; she chooses which long phrases to shortcut and learns those specific triggers. The asker can propose, but only Kai's adoption activates the value.
 
-**Why this loop is more compelling than Loop 1 in some ways:**
+**Where Loop 2 has an easier shape than Loop 1:**
 
 - The Wispr Flow surface already exists. No MCP is needed (though one would help with automated import); a Snippets file can be written and loaded today.
-- The corpus signal is structurally cleaner. Repetition detection from session JSONL is mechanical; no false-positive risk from "did this token mangle or is it idiosyncratic-but-correct".
-- Sidesteps the catastrophic failure categories from Loop 1's scope.
+- Sidesteps the catastrophic failure categories from Loop 1's scope: snippet expansion is exact text substitution, so a snippet-ized command lands correctly regardless of what code-mode auto-formatting would have done.
+
+**Where Loop 2 is actually harder than Loop 1:**
+
+- The corpus signal is noisier. "Phrase" is not one shape — long CLI args, slash-separated paths, issue-body openers, and natural-language repeats each need their own extraction strategy.
+- Frequency counting needs the right denominator. A phrase appearing 50 times in one session because Kai was iterating on a bug is not the same as appearing 50 times across 50 sessions; the first is task-specific noise, the second is durable signal. This is where session-lattice's session-grouping earns its place in the stack.
+- Trigger-name generation is genuinely difficult — the trigger has to be short, acoustically distinct, non-conflicting with natural speech, non-conflicting with other snippets, and memorable. Not heuristic-solvable; needs LLM-assist or interactive curation.
+- Loop 1's hard part is on Wispr Flow's side (they need to ship an MCP). Loop 2's hard part is on Kai's side (build the analyzer). Different bottleneck shapes.
 
 **Why Loop 1 still matters:** Loop 2 addresses repeated phrases, not new ones. The first time Kai dictates a CLI name in a sentence, no snippet exists yet. Loop 1's vocabulary feed is still needed for the long tail of one-off mentions.
+
+**Layered build path for Loop 2.** Plausible incremental ladder so the loop delivers value at each step instead of all-or-nothing:
+
+1. *Manual eyeball pass via repo-recall.* Walk recent sessions, surface obvious repeats, pick 5–10 snippets by hand. Tests the value hypothesis before any engineering.
+2. *One-shot frequency script.* Python stdlib, walks session JSONL, counts substrings above a length floor, sorts by count.
+3. *Luca dispatch route* wrapping the script. Natural-language access.
+4. *Length-weighted ranking.* `frequency × length` instead of raw count.
+5. *Session-aware weighting* via session-lattice or repo-recall session metadata. Drops task-specific noise.
+6. *Phrase-shape extractors.* Separate logic for path-shaped, command-shaped, prose-shaped phrases.
+7. *Trigger-name proposals* via LLM, presented for Kai's approval.
+8. *Conflict dedup* against the existing Wispr Flow snippets list, manual import until a Snippets-import API or MCP exists.
 
 ### Intervention 3: Auto Cleanup off in technical contexts (settings, not a loop)
 
