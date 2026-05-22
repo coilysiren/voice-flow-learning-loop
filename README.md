@@ -100,7 +100,7 @@ No structured chat block needed. The asker walks session JSONL directly, counts 
 
 Thin skill carrying the format spec and the trigger surface. Lives in this repo as the canonical home.
 
-- Skill: [`.claude/skills/writing-voice-mangle-log/SKILL.md`](.claude/skills/writing-voice-mangle-log/SKILL.md)
+- Skill: [`.agents/skills/writing-voice-mangle-log/SKILL.md`](.agents/skills/writing-voice-mangle-log/SKILL.md)
 
 Strict mode by default: only emit when both the mishear and the intended target are high-confidence.
 
@@ -131,7 +131,7 @@ Natural-language consumer over repo-recall data. Source stays private; capabilit
 
 Both loops reach into repo-recall via mcporter. Kai's session-config auto-reaches for the staging variants of the asker stack without being asked.
 
-- Skill: [`tooling-mcp-servers/SKILL.md`](https://github.com/coilysiren/agentic-os/blob/main/.claude/skills/tooling-mcp-servers/SKILL.md) in coilysiren/agentic-os.
+- Skill: [`tooling-mcp-servers/SKILL.md`](https://github.com/coilysiren/agentic-os/blob/main/.agents/skills/tooling-mcp-servers/SKILL.md) in coilysiren/agentic-os.
 
 ## Invariant: corpus hygiene
 
