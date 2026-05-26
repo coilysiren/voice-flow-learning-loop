@@ -50,9 +50,8 @@ WRAPPER_PATTERNS = [
     re.compile(r"\$\$.*?\$\$", re.DOTALL),
 ]
 
-# Heuristics for "this looks like a Task-tool subagent prompt, not Kai's
-# dictation." Subagent prompts get logged as user-role messages in the parent
-# session JSONL, so the type=user / role=user filter alone isn't enough.
+# Heuristics flagging Task-tool subagent prompts logged as user-role messages.
+# type=user / role=user filter alone isn't enough.
 SUBAGENT_PROMPT_PREFIXES = (
     "you're labeling",
     "you are labeling",
@@ -141,9 +140,8 @@ def looks_like_subagent_prompt(content: str) -> bool:
         return True
     if head.startswith(SUBAGENT_PROMPT_PREFIXES):
         return True
-    # Multi-section structured prompts (autonomous-engineering planner output,
-    # AFK dispatch prompts, etc.) have multiple blank-line-separated sections
-    # and / or numbered top-level lists. Real dictation rarely does.
+    # Multi-section structured prompts (planner / dispatch output) usually
+    # have many blank-line breaks and numbered lists. Real dictation doesn't.
     if content.count("\n\n") >= 3:
         return True
     if re.match(r"^\s*\d+\.\s", content) and content.count("\n") >= 5:
